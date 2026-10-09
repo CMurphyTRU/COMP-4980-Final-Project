@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class TerrainFace
 {
+    ShapeGenerator shapeGenerator;
+
     //Each TerrainFace gets a mesh
     Mesh mesh;
 
@@ -16,8 +18,9 @@ public class TerrainFace
     Vector3 axisB;
 
     //Constructor for TerrainFace
-    public TerrainFace(Mesh mesh, int resolution, Vector3 localUp)
+    public TerrainFace(ShapeGenerator shapeGenerator, Mesh mesh, int resolution, Vector3 localUp)
     {
+        this.shapeGenerator = shapeGenerator;
         this.mesh = mesh;
         this.resolution = resolution;
         this.localUp = localUp;
@@ -39,7 +42,7 @@ public class TerrainFace
 
         // Number of faces is (resolution - 1) squared. 
         // Each face has two triangles and each triangle has 3 vertices so we multiply by 6
-        int[] triangleIndices = new [(resolution - 1) * (resolution - 1) * 6];
+        int[] triangleIndices = new int[(resolution - 1) * (resolution - 1) * 6];
 
         int triIndex = 0;
 
@@ -56,7 +59,12 @@ public class TerrainFace
 
                 // calculates the 3D position of each vertex on a cube face and stores that position in the vertices array
                 Vector3 pointOnUnitCube = localUp + (percent.x - 0.5f) * 2 * axisA + (percent.y - 0.5f) * 2 * axisB;
-                vertices[i] = pointOnUnitCube;
+
+                Vector3 pointOnUnitSphere = pointOnUnitCube.normalized;
+
+                vertices[i] = shapeGenerator.CalculatePointOnPlanet(pointOnUnitSphere);
+
+                
 
                 // ensures that we are not on the last row or column of the face
                 if (x != resolution - 1 && y != resolution - 1)
@@ -74,7 +82,7 @@ public class TerrainFace
             }
         }
         // Clears the current mesh. Without this line, if we reduced the resolution of the planet, we may end up with vertices remaining from the higher resolution version causing visual errors
-        mesh.clear();
+        mesh.Clear();
 
         // sets the vertices of the mesh to the vertices contained in the vertices array
         mesh.vertices = vertices;
