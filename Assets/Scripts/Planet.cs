@@ -2,15 +2,19 @@ using UnityEngine;
 
 public class Planet : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    MeshFilter[] meshFilters;
 
-    // Update is called once per frame
-    void Update()
+    void initialize()
     {
-        
+        meshFilters = new MeshFilter[6];
+
+        for (int i = 0; i < 6; i++)
+        {
+            GameObject meshObj = new GameObject("mesh");
+            meshObj.transform.parent = transform;
+
+            meshObj.AddComponent<MeshRenderer>();
+            meshFilters[i] = meshObj.AddComponent<MeshFilter>();
+        }
     }
 }
