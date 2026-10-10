@@ -5,19 +5,53 @@ using UnityEditor;
 public class PlanetEditor : Editor
 {
     Planet planet;
+    Editor shapeEditor;
+    Editor colorEditor;
 
     public override void OnInspectorGUI()
     {
-        base.OnInspectorGUI();
+        using (var check = new EditorGUI.ChangeCheckScope())
+        {
+            base.OnInspectorGUI();
+            if (check.changed)
+            {
+                planet.GeneratePlanet();
+            }
+        }
 
-        DrawSettingsEditor(planet.shapeSettings);
-        DrawSettingsEditor(planet.colorSettings);
+        if (GUILayout.Button("Generate Planet"))
+        {
+            planet.GeneratePlanet();
+        }
+        
+
+        DrawSettingsEditor(planet.shapeSettings, planet.OnShapeSettingsUpdated, ref planet.shapeSettingsFoldout, ref shapeEditor);
+        DrawSettingsEditor(planet.colorSettings, planet.OnColorSettingsUpdated, ref planet.colorSettingsFoldout, ref colorEditor);
     }
 
-    void DrawSettingsEditor(Object settings)
+    void DrawSettingsEditor(Object settings, System.Action onSettingsUpdated, ref bool foldedOut, ref Editor editor)
     {
-        Editor editor = CreateEditor(settings);
-        editor.OnInspectorGUI();
+        if (settings != null)
+        {
+            foldedOut = EditorGUILayout.InspectorTitlebar(foldedOut, settings);
+    
+            using (var check = new EditorGUI.ChangeCheckScope())
+            {
+                if (foldedOut)
+                {
+                    CreateCachedEditor(settings, null, ref editor);
+                    editor.OnInspectorGUI();
+
+                    if (check.changed)
+                    {
+                        if (onSettingsUpdated != null)
+                        {
+                            onSettingsUpdated();
+                        }
+                    }
+                } 
+            }
+        }
     }
 
     private void OnEnable()
