@@ -13,3 +13,7 @@ MonoBehaviour:
   m_Name: ShapeSettings
   m_EditorClassIdentifier: Assembly-CSharp::ShapeSettings
   planetRadius: 1
+  noiseSettings:
+    strength: 0.48
+    roughness: 8.62
+    centre: {x: 0, y: 0, z: 0}
