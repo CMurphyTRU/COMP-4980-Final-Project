@@ -91,16 +91,16 @@ public class TerrainFace
         mesh.triangles = triangleIndices;
 
         // calculates surface normals based on the triangles we set. Normals are used by unity's lighting system to determine how light interacts with surfaces
-        //mesh.RecalculateNormals();
+        mesh.RecalculateNormals();
 
-        Vector3[] normals = new Vector3[vertices.Length];
+        /*Vector3[] normals = new Vector3[vertices.Length];
 
         for (int i = 0; i < vertices.Length; i++)
         {
             normals[i] = vertices[i].normalized;
         }
 
-        mesh.normals = normals;
+        mesh.normals = normals; */
     }   
 
 
