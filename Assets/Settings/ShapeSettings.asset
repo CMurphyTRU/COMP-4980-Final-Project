@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01da3dcf01737d14c882d00860616256, type: 3}
   m_Name: ShapeSettings
   m_EditorClassIdentifier: Assembly-CSharp::ShapeSettings
-  planetRadius: 2.72
+  planetRadius: 85.2
   noiseLayers:
   - enabled: 1
+    useFirstLayerAsMask: 0
     noiseSettings:
       strength: 0.12
       numLayers: 4
@@ -24,6 +25,7 @@ MonoBehaviour:
       centre: {x: 0, y: 0, z: 0}
       minValue: 1.06
   - enabled: 1
+    useFirstLayerAsMask: 1
     noiseSettings:
       strength: 0.36
       numLayers: 5
