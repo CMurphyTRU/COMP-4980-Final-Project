@@ -3,6 +3,9 @@ using UnityEngine;
 [System.Serializable]
 public class NoiseSettings
 {
+
+    public enum FilterType { Simple, Rigid};
+    public FilterType filterType;
     public float strength = 1;
 
     [Range(1, 8)]
