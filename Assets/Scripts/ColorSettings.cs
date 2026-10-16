@@ -4,4 +4,5 @@ using UnityEngine;
 public class ColorSettings : ScriptableObject
 {
     public Color planetColor;
+    public Material planetMaterial;
 }

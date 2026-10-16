@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class RigidNoiseFilter : INoiseFilter
 {
-    NoiseSettings settings;
+    NoiseSettings.RigidNoiseSettings settings;
     Noise noise = new Noise();
 
-    public RigidNoiseFilter(NoiseSettings settings)
+    public RigidNoiseFilter(NoiseSettings.RigidNoiseSettings settings)
     {
         this.settings = settings;
     }
@@ -22,7 +22,7 @@ public class RigidNoiseFilter : INoiseFilter
             float v = 1 - Mathf.Abs(noise.Evaluate(point * frequency + settings.centre));
             v *= v;
             v *= weight;
-            weight = v;
+            weight = Mathf.Clamp01(v * settings.weightMultiplier);
             noiseValue += (v + 1) * 0.5f * amplitude;
             frequency *= settings.roughness;
             amplitude *= settings.persistence;
