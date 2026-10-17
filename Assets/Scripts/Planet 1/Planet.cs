@@ -17,6 +17,10 @@ public class Planet : MonoBehaviour
     [HideInInspector]
     public bool colorSettingsFoldout;
 
+    [Header("Random Generation")]
+    public bool randomizeSeed = true;
+    public int seed = 12345;
+
 
     ShapeGenerator shapeGenerator = new ShapeGenerator();
     ColorGenerator colorGenerator = new ColorGenerator();
@@ -24,6 +28,12 @@ public class Planet : MonoBehaviour
     [SerializeField, HideInInspector]
     MeshFilter[] meshFilters;
     TerrainFace[] terrainFaces;
+
+    void Start()
+    {
+        RandomizeTerrain();
+        GeneratePlanet();
+    }
 
 
     void Initialize()
@@ -103,5 +113,27 @@ public class Planet : MonoBehaviour
     void GenerateColors()
     {
         colorGenerator.UpdateColors();
+    }
+
+    void RandomizeTerrain()
+    {
+        if (randomizeSeed)
+        {
+            seed = System.Environment.TickCount;
+        }
+
+        Random.InitState(seed);
+
+        foreach (ShapeSettings.NoiseLayer layer in shapeSettings.noiseLayers)
+        {
+            Vector3 randomCentre = new Vector3(
+                Random.Range(-10000f, 10000f),
+                Random.Range(-10000f, 10000f),
+                Random.Range(-10000f, 10000f)
+            );
+
+            layer.noiseSettings.simpleNoiseSettings.centre = randomCentre;
+            layer.noiseSettings.rigidNoiseSettings.centre = randomCentre;
+        }
     }
 }

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DiamondSquareGenerator : MonoBehaviour
+public class DiamondSquareGenerator
 {
     private int resolution;
     private float[,] heightMap;
