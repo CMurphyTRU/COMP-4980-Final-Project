@@ -112,24 +112,28 @@ public class DiamondSquareFace : MonoBehaviour
         if (height < 0.30f)
         {
             return new Color(0.65f, 0.55f, 0.35f);
+            
         }
 
         // low land gets the color sandy beige
         if (height < 0.45f)
         {
             return new Color(0.85f, 0.75f, 0.5f);
+            
         }
         
         // middle elevations get the color green
         if (height < 0.70f)
         {
             return new Color(0.2f, 0.6f, 0.2f);
+            
         }
 
         // high elevations get the color grey
         if (height < 0.85f)
         {
             return new Color(0.45f, 0.45f, 0.45f);
+            
         }
 
         // highest points get the color white

@@ -232,6 +232,8 @@ public class MazeGenerator : MonoBehaviour
         {
             wall.transform.localScale = new Vector3(cellSize, wallHeight, wallThickness);
         }
+
+        wall.GetComponent<Renderer>().material.color = Color.black;
     }
 
     // creates a single large floor underneath the entire maze
