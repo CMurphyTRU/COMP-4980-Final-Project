@@ -1,42 +1,56 @@
 using UnityEngine;
 
+
 public class Planet : MonoBehaviour
 {
+    //Controls the number of vertices along each edge of a cube face. higher values make smoother terrain
     [Range(2, 256)]
     public int resolution = 10;
+
+
+    // controls whether or not the planet should be automatically rebuilt when planet settings are changed
     public bool autoUpdate = true;
-    public enum FaceRenderMask { All, Top, Bottom, Left, Right, Front, Back };
+
+    // allows a single face to be displayed when inspecting the generated mesh
+    public enum FaceRenderMask { All, Top, Bottom, Left, Right, Front, Back }
     public FaceRenderMask faceRenderMask;
 
+    // settings to control terrain elevation and terrain color
     public ShapeSettings shapeSettings;
     public ColorSettings colorSettings;
 
-    [HideInInspector]
-    public bool shapeSettingsFoldout;
+    // editor foldout code, not related to generation
+    [HideInInspector] public bool shapeSettingsFoldout;
+    [HideInInspector] public bool colorSettingsFoldout;
 
-    [HideInInspector]
-    public bool colorSettingsFoldout;
-
+    // controls whether or not the planet should be randomly generated each time play mode is entered
     [Header("Random Generation")]
     public bool randomizeSeed = true;
     public int seed = 12345;
 
+    // helper objects for controlling terrain shape and surface colors
+    private readonly ShapeGenerator shapeGenerator = new ShapeGenerator();
+    private readonly ColorGenerator colorGenerator = new ColorGenerator();
 
-    ShapeGenerator shapeGenerator = new ShapeGenerator();
-    ColorGenerator colorGenerator = new ColorGenerator();
-
+    // Arrays to hold the meshfilters and terrainfaces
     [SerializeField, HideInInspector]
-    MeshFilter[] meshFilters;
-    TerrainFace[] terrainFaces;
+    private MeshFilter[] meshFilters;
+    private TerrainFace[] terrainFaces;
 
-    void Start()
+    // builds the planet
+    private void Start()
     {
         RandomizeTerrain();
+
+        System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
         GeneratePlanet();
+        stopwatch.Stop();
+
+        Debug.Log($"Simplex noise generation time: {stopwatch.Elapsed.TotalMilliseconds:F3} ms");
     }
 
-
-    void Initialize()
+    // prepares the generators and either creates or reuses the six cube-face meshes based on if meshfilters is empty or not
+    private void Initialize()
     {
         shapeGenerator.UpdateSettings(shapeSettings);
         colorGenerator.UpdateSettings(colorSettings);
@@ -45,31 +59,39 @@ public class Planet : MonoBehaviour
         {
             meshFilters = new MeshFilter[6];
         }
-        
+
         terrainFaces = new TerrainFace[6];
 
-        Vector3[] directions = {Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward, Vector3.back};
-
-        for (int i = 0; i < 6; i++)
+        // array containing the six directions of the faces of the original cube
+        Vector3[] directions =
         {
+            Vector3.up, Vector3.down, Vector3.left,
+            Vector3.right, Vector3.forward, Vector3.back
+        };
+
+
+        for (int i = 0; i < directions.Length; i++)
+        {
+            // creates the meshes if they do not already exist
             if (meshFilters[i] == null)
             {
-                GameObject meshObj = new GameObject("mesh");
-                meshObj.transform.parent = transform;
-
-                meshObj.AddComponent<MeshRenderer>();
-                meshFilters[i] = meshObj.AddComponent<MeshFilter>();
+                GameObject meshObject = new GameObject("mesh");
+                meshObject.transform.parent = transform;
+                meshObject.AddComponent<MeshRenderer>();
+                meshFilters[i] = meshObject.AddComponent<MeshFilter>();
                 meshFilters[i].sharedMesh = new Mesh();
             }
-            meshFilters[i].GetComponent<MeshRenderer>().sharedMaterial = colorSettings.planetMaterial;
-            
 
+            meshFilters[i].GetComponent<MeshRenderer>().sharedMaterial = colorSettings.planetMaterial;
             terrainFaces[i] = new TerrainFace(shapeGenerator, meshFilters[i].sharedMesh, resolution, directions[i]);
-            bool renderFace = faceRenderMask == FaceRenderMask.All || (int) faceRenderMask - 1 == i;
+
+            // only renders the selected face in the inspector
+            bool renderFace = faceRenderMask == FaceRenderMask.All || (int)faceRenderMask - 1 == i;
             meshFilters[i].gameObject.SetActive(renderFace);
         }
     }
 
+    // builds or rebuilds the planet geometry and updates its material colors
     public void GeneratePlanet()
     {
         Initialize();
@@ -77,6 +99,7 @@ public class Planet : MonoBehaviour
         GenerateColors();
     }
 
+    // if auto update is enabled, rebuilds the terrain when the shape settings are changed
     public void OnShapeSettingsUpdated()
     {
         if (autoUpdate)
@@ -84,9 +107,9 @@ public class Planet : MonoBehaviour
             Initialize();
             GenerateMesh();
         }
-        
     }
 
+    // if auto update is enabled, refreshes the material colors.
     public void OnColorSettingsUpdated()
     {
         if (autoUpdate)
@@ -94,12 +117,12 @@ public class Planet : MonoBehaviour
             Initialize();
             GenerateColors();
         }
-        
     }
 
-    void GenerateMesh()
+    // constructs the face meshes and passes the bounds of the elevations to the color generator
+    private void GenerateMesh()
     {
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < meshFilters.Length; i++)
         {
             if (meshFilters[i].gameObject.activeSelf)
             {
@@ -107,33 +130,32 @@ public class Planet : MonoBehaviour
             }
         }
 
-        colorGenerator.UpdateElevation(shapeGenerator.elevationMinMax);
+        colorGenerator.UpdateElevation(shapeGenerator.ElevationMinMax);
     }
 
-    void GenerateColors()
+    // builds the gradient used by the planet material
+    private void GenerateColors()
     {
         colorGenerator.UpdateColors();
     }
 
-    void RandomizeTerrain()
+    // sets either a random or a fixed seed assigned each noise layer a 3d sampling offset
+    private void RandomizeTerrain()
     {
         if (randomizeSeed)
         {
             seed = System.Environment.TickCount;
         }
 
+        // call unity's random generator so the offsets cand be reproduced
         Random.InitState(seed);
 
         foreach (ShapeSettings.NoiseLayer layer in shapeSettings.noiseLayers)
         {
-            Vector3 randomCentre = new Vector3(
+            layer.noiseSettings.simpleNoiseSettings.centre = new Vector3(
                 Random.Range(-10000f, 10000f),
                 Random.Range(-10000f, 10000f),
-                Random.Range(-10000f, 10000f)
-            );
-
-            layer.noiseSettings.simpleNoiseSettings.centre = randomCentre;
-            layer.noiseSettings.rigidNoiseSettings.centre = randomCentre;
+                Random.Range(-10000f, 10000f));
         }
     }
 }

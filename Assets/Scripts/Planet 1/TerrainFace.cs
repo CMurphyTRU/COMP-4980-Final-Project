@@ -1,110 +1,67 @@
 using UnityEngine;
 
-public class TerrainFace
+// Creates one square mesh face, projects it onto a sphere, and applies terrain displacement.
+internal sealed class TerrainFace
 {
-    ShapeGenerator shapeGenerator;
+    // Helper objects that control terrain shape and surface colors.
+    private readonly ShapeGenerator shapeGenerator;
+    private readonly Mesh mesh;
+    private readonly int resolution;
+    private readonly Vector3 localUp;
+    private readonly Vector3 axisA;
+    private readonly Vector3 axisB;
 
-    //Each TerrainFace gets a mesh
-    Mesh mesh;
-
-    // how detailed each terrain face needs to be
-    int resolution;
-
-    //which way each face is facing
-    Vector3 localUp;
-
-    // other two axis based on localUp
-    Vector3 axisA;
-    Vector3 axisB;
-
-    //Constructor for TerrainFace
+    // Defines the orientation of the face and two perpendicular axes across its surface.
     public TerrainFace(ShapeGenerator shapeGenerator, Mesh mesh, int resolution, Vector3 localUp)
     {
         this.shapeGenerator = shapeGenerator;
         this.mesh = mesh;
         this.resolution = resolution;
         this.localUp = localUp;
-
-        // swap the coordinates of localup.x, y, and z with localUp.y, z, and x respectively to give us the second axis
         axisA = new Vector3(localUp.y, localUp.z, localUp.x);
-
-        // Find a vector that is perpendicular to both localUp and axisA
         axisB = Vector3.Cross(localUp, axisA);
     }
-    
-    //
+
+    // Generates the vertices and triangle indices for this face and recalculates the normals.
     public void ConstructMesh()
     {
-        //Array of Vector3 to hold the vertices
-        // Resolution is the number of vertices along a single edge
-        // So resolution squared is the total number of vertices in the mesh
         Vector3[] vertices = new Vector3[resolution * resolution];
 
-        // Number of faces is (resolution - 1) squared. 
-        // Each face has two triangles and each triangle has 3 vertices so we multiply by 6
-        int[] triangleIndices = new int[(resolution - 1) * (resolution - 1) * 6];
-
-        int triIndex = 0;
+        // Every grid cell contains two triangles which requires six vertex indices.
+        int[] triangles = new int[(resolution - 1) * (resolution - 1) * 6];
+        int triangleIndex = 0;
 
         for (int y = 0; y < resolution; y++)
         {
             for (int x = 0; x < resolution; x++)
             {
-                //calculate the index by taking the number of iterations of the inner loop and multiplying it by the number of iterations of the outer loop
-                // we multiply y by the resolution because x iterates n times before y iterates again (with n being the resolution)
-                int i = x + y * resolution;
+                int vertexIndex = x + y * resolution;
 
-                // tells us how close to completion each loop is
+                // Convert grid coordinates into the 0-1 range for both face axes.
                 Vector2 percent = new Vector2(x, y) / (resolution - 1);
 
-                // calculates the 3D position of each vertex on a cube face and stores that position in the vertices array
-                Vector3 pointOnUnitCube = localUp + (percent.x - 0.5f) * 2 * axisA + (percent.y - 0.5f) * 2 * axisB;
+                // Map the grid to a cube face, normalize it onto a sphere, then displace it.
+                Vector3 pointOnCube = localUp + (percent.x - 0.5f) * 2f * axisA + (percent.y - 0.5f) * 2f * axisB;
+                vertices[vertexIndex] = shapeGenerator.CalculatePointOnPlanet(pointOnCube.normalized);
 
-                Vector3 pointOnUnitSphere = pointOnUnitCube.normalized;
-
-                vertices[i] = shapeGenerator.CalculatePointOnPlanet(pointOnUnitSphere);
-
-                
-
-                // ensures that we are not on the last row or column of the face
-                if (x != resolution - 1 && y != resolution - 1)
+                // Connect each grid cell to two triangles, except along the final row/column.
+                if (x < resolution - 1 && y < resolution - 1)
                 {
-                    // add the indices of the two triangles in the current square of the face and increment by 6
-                    triangleIndices[triIndex] = i;
-                    triangleIndices[triIndex + 1] = i + resolution + 1;
-                    triangleIndices[triIndex + 2] = i + resolution;
-
-                    triangleIndices[triIndex + 3] = i;
-                    triangleIndices[triIndex + 4] = i + 1;
-                    triangleIndices[triIndex + 5] = i + resolution + 1;
-                    triIndex += 6;
+                    triangles[triangleIndex] = vertexIndex;
+                    triangles[triangleIndex + 1] = vertexIndex + resolution + 1;
+                    triangles[triangleIndex + 2] = vertexIndex + resolution;
+                    triangles[triangleIndex + 3] = vertexIndex;
+                    triangles[triangleIndex + 4] = vertexIndex + 1;
+                    triangles[triangleIndex + 5] = vertexIndex + resolution + 1;
+                    triangleIndex += 6;
                 }
             }
         }
-        // Clears the current mesh. Without this line, if we reduced the resolution of the planet, we may end up with vertices remaining from the higher resolution version causing visual errors
+
+        // Replace the old geometry and recalculate the lighting normals.
         mesh.Clear();
-
-        // sets the vertices of the mesh to the vertices contained in the vertices array
         mesh.vertices = vertices;
-
-        // assigns the triangle indices to the mesh
-        mesh.triangles = triangleIndices;
-
-        // calculates surface normals based on the triangles we set. Normals are used by unity's lighting system to determine how light interacts with surfaces
+        mesh.triangles = triangles;
         mesh.RecalculateNormals();
-
-        /*Vector3[] normals = new Vector3[vertices.Length];
-
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            normals[i] = vertices[i].normalized;
-        }
-
-        mesh.normals = normals; */
-    }   
-
-
-
-   
-   
+    }
 }

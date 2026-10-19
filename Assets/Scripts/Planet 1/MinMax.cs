@@ -1,26 +1,13 @@
-using UnityEngine;
-
-public class MinMax
+// Tracks the smallest and largest elevations encountered during mesh generation.
+internal sealed class MinMax
 {
-    public float Min { get; private set; }
-    public float Max { get; private set; }
+    public float Min { get; private set; } = float.MaxValue;
+    public float Max { get; private set; } = float.MinValue;
 
-    public MinMax()
+    // Updates the stored elevation range with the newly generated value.
+    public void AddValue(float value)
     {
-        Min = float.MaxValue;
-        Max = float.MinValue;
-    }   
-
-    public void AddValue(float v)
-    {
-        if (v > Max)
-        {
-            Max = v;
-        }
-
-        if (v < Min)
-        {
-            Min = v;
-        }
+        if (value > Max) Max = value;
+        if (value < Min) Min = value;
     }
 }
